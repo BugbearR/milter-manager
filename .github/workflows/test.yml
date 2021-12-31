@@ -1,0 +1,41 @@
+name: Test
+on:
+  - push
+  - pull_request
+jobs:
+  test:
+    name: Test
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          # - almalinux-8
+          - centos-7
+          - debian-bullseye
+          - ubuntu-bionic
+          - ubuntu-focal
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y -V \
+            curl \
+            gtk-doc-tools \
+            intltool \
+            lsb-release
+          curl \
+            --silent \
+            --location \
+            https://raw.github.com/clear-code/cutter/master/data/travis/setup.sh | sh
+      - name: Generate configure
+        run: |
+          ./autogen.sh
+      - name: Build Docker image
+        run: |
+          docker-compose build ${{ matrix.service }}
+      - name: Run
+        run: |
+          docker-compose run --rm ${{ matrix.service }}

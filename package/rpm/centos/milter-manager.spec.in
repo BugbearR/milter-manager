@@ -1,6 +1,8 @@
 %define ruby_version %(ruby -e "print RUBY_VERSION.tr('.', '')")
 %define ruby_libdir %(ruby -rrbconfig -e 'print RbConfig::CONFIG["rubylibdir"]')
 
+%define required_ruby_package rh-ruby30-ruby
+
 %undefine _hardened_build
 
 Summary: A milter to use milters effectively
@@ -18,7 +20,7 @@ BuildRequires: gettext
 BuildRequires: gcc
 BuildRequires: make
 BuildRequires: glib2-devel
-BuildRequires: ruby ruby-devel
+BuildRequires: %{required_ruby_package} %{required_ruby_package}-devel
 BuildRequires: systemd-units
 BuildRequires: systemd
 %{systemd_requires}
@@ -39,6 +41,7 @@ administration cost and combine milters flexibly.
 Summary: Runtime libraries for milter manager
 Group: System Environment/Libraries
 License: LGPLv3+
+Requires: rh-ruby30-rubygem-rexml
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 
@@ -129,7 +132,7 @@ Summary: Ruby bindings for libmilter-core
 Group: Development/Libraries
 License: LGPLv3+
 Obsoletes: ruby-milter-toolkit < 1.6.6-0
-Requires: ruby
+Requires: %{required_ruby_package}
 Requires: libmilter-core = %{version}-%{release}
 
 %description -n ruby-milter-core
@@ -140,7 +143,7 @@ Summary: Ruby bindings for libmilter-client
 Group: Development/Libraries
 License: LGPLv3+
 Obsoletes: ruby-milter-toolkit < 1.6.6-0
-Requires: ruby
+Requires: %{required_ruby_package}
 Requires: libmilter-client = %{version}-%{release}
 Requires: ruby-milter-core = %{version}-%{release}
 
@@ -152,7 +155,7 @@ Summary: Ruby bindings for libmilter-server
 Group: Development/Libraries
 License: LGPLv3+
 Obsoletes: ruby-milter-toolkit < 1.6.6-0
-Requires: ruby
+Requires: %{required_ruby_package}
 Requires: libmilter-server = %{version}-%{release}
 
 %description -n ruby-milter-server
@@ -196,7 +199,7 @@ Summary: Analyze milter-manager's log
 Group: Applications/System
 License: GPLv3+
 Requires: milter-manager = %{version}-%{release}
-Requires: ruby
+Requires: %{required_ruby_package}
 Requires: rrdtool
 
 %description log-analyzer
@@ -230,8 +233,10 @@ export CXXFLAGS="$RPM_OPT_FLAGS -fPIC -pie -Wl,-z,relro -Wl,-z,lazy"
     --with-default-socket-group=milter-manager				\
     --with-default-pid-file=/var/run/milter-manager/milter-manager.pid	\
     --with-default-connection-spec=unix:/var/run/milter-manager/milter-manager.sock \
-    --with-ruby=/usr/bin/ruby						\
+    --with-ruby=$(command -v ruby)					\
     --with-bundled-ruby-glib2						\
+    --with-bundled-ruby-gio2						\
+    --with-bundled-ruby-gobject-introspection				\
     --enable-ruby-milter=%{ruby_libdir}
 
 sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
@@ -438,8 +443,14 @@ fi
 %{_libdir}/milter-manager/binding/lib/gnome2/rake/*.rb
 %endif
 %{_libdir}/milter-manager/binding/lib/*gnome2*.rb
-%{_libdir}/milter-manager/binding/lib/pkg-config.rb
 %{_libdir}/pkgconfig/ruby-milter-core.pc
+%{_libdir}/milter-manager/binding/ext/*.so
+%{_libdir}/milter-manager/binding/ext/*.h
+%{_libdir}/milter-manager/binding/lib/gi*.rb
+%{_libdir}/milter-manager/binding/lib/gio2/*.rb
+%{_libdir}/milter-manager/binding/lib/gobject-introspection.rb
+%{_libdir}/milter-manager/binding/lib/gobject-introspection/*.rb
+%{_libdir}/milter-manager/binding/lib/mkmf-gnome.rb
 
 %files -n ruby-milter-client
 %defattr(-,root,root)
@@ -501,6 +512,9 @@ fi
 
 
 %changelog
+* Wed Dec 22 2021 Kentaro Hayashi <hayashi@clear-code.com> - 2.1.6-1
+- new upstream release.
+
 * Tue Sep 10 2019 Kentaro Hayashi <hayashi@clear-code.com> - 2.1.5-1
 - new upstream release.
 
